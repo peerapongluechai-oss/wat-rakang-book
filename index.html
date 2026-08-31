@@ -3,51 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เปิดจอง: หนังสือวัตถุมงคล สายอนุสรณ์วัดระฆัง ฉบับสมบูรณ์</title>
+    <title>เปิดจอง: หนังสือพระวัดระฆัง100ปี ฉบับสมบูรณ์</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pridi:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBtb2XPdGfQaZR2caHR7fa2BSXJOvmlmhY",
-            authDomain: "myfamilyproject-ecff4.firebaseapp.com",
-            projectId: "myfamilyproject-ecff4",
-            storageBucket: "myfamilyproject-ecff4.firebasestorage.app",
-            messagingSenderId: "714527535272",
-            appId: "1:714527535272:web:592cdd94964bad5d52529d",
-            measurementId: "G-X7VDBV6N02"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        window.db = getFirestore(app);
-        window.colPath = 'wat_rakang_orders';
-        window.currentUser = null;
-
-        async function initAuth() {
-            try {
-                const userCredential = await signInAnonymously(auth);
-                window.currentUser = userCredential.user;
-                const btn = document.getElementById('submitBtn');
-                if(btn) {
-                    btn.disabled = false;
-                    btn.innerText = 'ยืนยันการสั่งจอง และแจ้งโอนเงิน';
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-                const btn = document.getElementById('submitBtn');
-                if(btn) btn.innerText = 'ไม่สามารถเชื่อมต่อระบบได้';
-                window.showAlert(`เกิดข้อผิดพลาดในการเชื่อมต่อ Firebase<br><span class="text-xs text-red-500">${error.message}</span>`);
-            }
-        }
-        initAuth();
-    </script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -101,7 +61,7 @@
     <header class="bg-navy-900 shadow-md sticky top-0 z-50 border-b border-gold-500/30">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="text-xl md:text-2xl font-bold text-gold-400 font-heading tracking-wide">
-                อนุสรณ์วัดระฆัง ฉบับสมบูรณ์
+                หนังสือพระวัดระฆัง100ปี ฉบับสมบูรณ์
             </div>
             <a href="#preorder-section" class="bg-gold-500 hover:bg-gold-400 text-navy-900 px-4 py-2 md:px-6 md:py-2 rounded-md font-bold transition duration-300 shadow-md text-sm md:text-base">
                 สั่งจองทันที
@@ -152,7 +112,7 @@
                                 <h3 class="text-xl sm:text-2xl font-bold mb-2">หนังสือพระวัดระฆัง100ปี</h3>
                                 <h4 class="text-lg sm:text-xl">สายอนุสรณ์วัดระฆัง</h4>
                                 <p class="text-sm sm:text-base mt-2 text-gold-300 bg-navy-900 px-3 py-1 rounded-full border border-gold-500/20">ฉบับสมบูรณ์ (บรรจุ 2 เล่ม)</p>
-                                <span class="mt-4 text-xs text-gray-500">(รูปภาพกำลังปรับปรุง)</span>
+                                <span class="mt-4 text-xs text-gray-500">(รูปภาพ Box Set)</span>
                             </div>
                         </div>
                     </div>
@@ -182,12 +142,12 @@
 
                 <div class="bg-slate-50 border border-slate-200 p-8 rounded-2xl hover:shadow-lg transition">
                     <div class="w-14 h-14 bg-navy-900 text-gold-400 rounded-xl flex items-center justify-center text-2xl font-bold mb-6 font-heading">2</div>
-                    <h3 class="text-xl font-bold font-heading text-navy-900 mb-4">เล่มที่ 2 : รวมทุกรุ่นตั้งแต่ 108 ปี - 151 ปี</h3>
+                    <h3 class="text-xl font-bold font-heading text-navy-900 mb-4">เล่มที่ 2 : รวมทุกรุ่นตั้งแต่ รุ่น 108 ปี - รุ่น 151 ปี</h3>
                     <ul class="space-y-3 text-gray-700 text-sm sm:text-base">
-                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รวมรุ่นอนุสรณ์ฯ : 108ปี,118ปี,122ปี,151ปี เนื้อโลหะ และเนื้อผง</li>
-                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รวมรุ่น ปีเกิด : 214 ปีเกิด ,231ปี ชาตกาล เนื้อโลหะ และเนื้อผง</li>
+                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รวมรุ่นอนุสรณ์ฯ : 108ปี, 118ปี, 122ปี, 151ปี เนื้อโลหะ และเนื้อผง</li>
+                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รวมรุ่น ปีเกิด : 214 ปีเกิด, 231ปี ชาตกาล เนื้อโลหะ และเนื้อผง</li>
                         <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รวมรุ่นเสาร์ห้า : รุ่นแรก ปี 36, รุ่น 2 ปี 39 เนื้อโลหะ และเนื้อผง</li>
-                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รุ่นสร้างโรงเรียนพระปริยัติธรรม ปี16</li>
+                        <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> รุ่นสร้างโรงเรียนพระปริยัติธรรม ปี 16</li>
                         <li class="flex items-start"><span class="text-gold-600 mr-2">✅</span> ฉบับ 2 ภาษา ไทย-อังกฤษ</li>
                     </ul>
                 </div>
@@ -310,7 +270,7 @@
     <!-- Custom Alert Modal -->
     <div id="alertModal" class="fixed inset-0 bg-black/60 z-[300] hidden items-center justify-center px-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-            <h3 class="text-xl font-bold text-navy-900 mb-2">แจ้งเตือน</h3>
+            <h3 class="text-xl font-bold text-navy-900 mb-2" id="alertTitle">แจ้งเตือน</h3>
             <p class="text-gray-600 mb-6" id="alertMsg"></p>
             <button onclick="document.getElementById('alertModal').style.display='none'" class="bg-navy-900 text-white px-6 py-2 rounded-lg font-bold">ตกลง</button>
         </div>
@@ -446,11 +406,51 @@
         </div>
     </div>
 
-    <script>
-        window.showAlert = function(msg, isError = true) {
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtb2XPdGfQaZR2caHR7fa2BSXJOvmlmhY",
+            authDomain: "myfamilyproject-ecff4.firebaseapp.com",
+            projectId: "myfamilyproject-ecff4",
+            storageBucket: "myfamilyproject-ecff4.firebasestorage.app",
+            messagingSenderId: "714527535272",
+            appId: "1:714527535272:web:592cdd94964bad5d52529d",
+            measurementId: "G-X7VDBV6N02"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.db = getFirestore(app);
+        window.colPath = 'wat_rakang_orders';
+        window.currentUser = null;
+
+        // Custom Alert UI
+        window.showAlert = function(msg, title = "แจ้งเตือน") {
+            document.getElementById('alertTitle').innerText = title;
             document.getElementById('alertMsg').innerHTML = msg;
             document.getElementById('alertModal').style.display = 'flex';
         };
+
+        async function initAuth() {
+            try {
+                const userCredential = await signInAnonymously(auth);
+                window.currentUser = userCredential.user;
+                const btn = document.getElementById('submitBtn');
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'ยืนยันการสั่งจอง และแจ้งโอนเงิน';
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+                const btn = document.getElementById('submitBtn');
+                if(btn) btn.innerText = 'ไม่สามารถเชื่อมต่อระบบได้';
+                window.showAlert(`เกิดข้อผิดพลาดในการเชื่อมต่อ Firebase<br><span class="text-xs text-red-500">${error.message}</span>`, "ข้อผิดพลาด");
+            }
+        }
+        initAuth();
 
         window.calculateTotal = function() {
             const qty = parseInt(document.getElementById('quantity').value) || 1;
@@ -458,7 +458,7 @@
             const addressContainer = document.getElementById('addressContainer');
             const addressInput = document.getElementById('address');
             
-            const pricePerBook = 1980;
+            const pricePerBook = 1980; // ราคาใหม่ 1,980
             let shippingFee = 0;
             let breakdownText = "";
 
@@ -483,6 +483,7 @@
             document.getElementById('totalPrice').innerText = total.toLocaleString() + ' บาท';
             document.getElementById('priceBreakdown').innerText = breakdownText;
         };
+        // เรียกคำนวณครั้งแรก
         window.calculateTotal();
 
         window.previewSlip = function(event) {
@@ -655,13 +656,13 @@
 
         window.checkAdminPwd = function() {
             const pwd = document.getElementById('adminPwd').value;
-            if(pwd === 'admin1234') { // <--- รหัสผ่านแอดมิน 
+            if(pwd === 'admin1234') { 
                 document.getElementById('adminLoginModal').style.display = 'none';
                 document.getElementById('adminModal').style.display = 'flex';
                 document.getElementById('adminPwd').value = '';
                 window.loadAdminData();
             } else {
-                alert("รหัสผ่านไม่ถูกต้อง");
+                window.showAlert("รหัสผ่านไม่ถูกต้อง");
             }
         };
 
@@ -764,7 +765,7 @@
                 document.getElementById('slipViewerImage').src = order.slipImage;
                 document.getElementById('slipViewerModal').style.display = 'flex';
             } else {
-                alert("ไม่พบรูปสลิป");
+                window.showAlert("ไม่พบรูปสลิป");
             }
         };
 
@@ -809,7 +810,7 @@
                 await updateDoc(rowRef, { status: status });
                 window.loadAdminData(); // โหลดใหม่เพื่อคำนวณยอดเงินใหม่
             } catch (error) {
-                alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ: " + error.message);
+                window.showAlert("เกิดข้อผิดพลาดในการอัปเดตสถานะ: " + error.message, "ข้อผิดพลาด");
             }
         };
 
@@ -873,18 +874,18 @@
                     totalAmount: totalPrice,
                     allocatedNumbers: allocatedNumbers,
                     slipImage: null,
-                    status: 'approved',
+                    status: 'approved', // จองหน้าร้านถือว่าอนุมัติแล้ว
                     orderDate: serverTimestamp(),
                     userId: window.currentUser ? window.currentUser.uid : 'admin_manual'
                 };
 
                 await addDoc(preordersRef, orderData);
                 document.getElementById('manualBookModal').style.display = 'none';
-                alert("ตัดสต๊อกสำเร็จ! ได้ชุดหมายเลข: " + allocatedNumbers.join(', '));
+                window.showAlert("ตัดสต๊อกสำเร็จ! ได้ชุดหมายเลข: " + allocatedNumbers.join(', '), "สำเร็จ");
                 window.loadAdminData();
 
             } catch(error) {
-                alert(error.message);
+                window.showAlert(error.message, "ข้อผิดพลาด");
             } finally {
                 btn.disabled = false;
                 btn.innerText = origText;
@@ -893,7 +894,7 @@
 
         window.exportCSV = function() {
             if(window.adminOrders.length === 0) {
-                alert('ไม่มีข้อมูลให้ Export'); return;
+                window.showAlert('ไม่มีข้อมูลให้ Export'); return;
             }
             let csvContent = "\uFEFF"; // BOM for Thai language Excel
             csvContent += "วันที่จอง,ชื่อลูกค้า,เบอร์โทร,จำนวนชุด,หมายเลขที่ได้,วิธีรับ,ที่อยู่จัดส่ง,ยอดเงิน(บาท),สถานะ\n";
