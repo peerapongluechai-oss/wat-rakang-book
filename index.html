@@ -1,3 +1,8 @@
+<!-- Chosen Palette: Navy and Gold Accent Theme (Navy: #020617, Gold: #eab308) -->
+<!-- Application Structure Plan: Landing page layout designed for pre-ordering valuable sacred books with integrated Admin Dashboard. Sections include Hero section with pricing highlight, Box Set details section, Payment/Bank Transfer details side-by-side with Order Form, Slip Upload field with required validation & image preview, Success Modal overlay, and a protected Admin Dashboard Modal with order overview stats, detailed order table, slip image viewer, status updating, and UTF-8 CSV report exporting. -->
+<!-- Visualization & Content Choices: Tailwind CSS for clean layout, Firebase Firestore (JS SDK) for secure order storage with base64 compressed slip storage and real-time/admin doc queries, interactive JavaScript for real-time total price calculation, slip image handling, and UTF-8 BOM CSV generation for Excel. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -11,9 +16,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // โค้ด Firebase ของคุณที่นำมาใส่
         const firebaseConfig = {
             apiKey: "AIzaSyBtb2XPdGfQaZR2caHR7fa2BSXJOvmlmhY",
             authDomain: "myfamilyproject-ecff4.firebaseapp.com",
@@ -24,15 +28,13 @@
             measurementId: "G-X7VDBV6N02"
         };
 
-        // เริ่มต้นการทำงานของ Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ตัวแปรเก็บผู้ใช้
         let currentUser = null;
+        let cachedOrders = [];
 
-        // ฟังก์ชันเชื่อมต่อ (ล็อกอินแบบไม่ระบุตัวตนเพื่อให้ลูกค้ากดจองได้)
         async function initAuth() {
             try {
                 const userCredential = await signInAnonymously(auth);
@@ -42,116 +44,213 @@
             } catch (error) {
                 console.error("Auth Error:", error);
                 document.getElementById('submitBtn').innerText = 'ไม่สามารถเชื่อมต่อระบบได้';
+                alert(`เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}\n*หากรันบน GitHub กรุณาเพิ่มโดเมนใน Firebase Authorized Domains`);
             }
         }
         
-        initAuth(); // เรียกใช้งานทันทีเมื่อโหลดเว็บ
+        initAuth();
 
-        // ฟังก์ชันเมื่อลูกค้ากด "ยืนยันการสั่งจอง"
         window.processPreOrder = async function(event) {
             event.preventDefault();
             
             if (!currentUser) {
-                alert("ระบบกำลังเชื่อมต่อฐานข้อมูล กรุณารอสักครู่...");
+                alert("ระบบยังเชื่อมต่อไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ หรือตรวจสอบการตั้งค่า Firebase");
+                return;
+            }
+
+            const slipFileInput = document.getElementById('slipFile');
+            if (!slipFileInput.files || slipFileInput.files.length === 0) {
+                alert("กรุณาแนบหลักฐานการโอนเงิน (สลิป) ก่อนทำรายการ");
+                slipFileInput.focus();
                 return;
             }
 
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⌛</span> กำลังบันทึกข้อมูล...';
+            submitBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⌛</span> กำลังส่งข้อมูลและหลักฐานการโอน...';
 
             try {
                 const fullname = document.getElementById('fullname').value;
                 const phone = document.getElementById('phone').value;
                 const quantity = parseInt(document.getElementById('quantity').value);
                 const address = document.getElementById('address').value;
-                
                 const pricePerBook = 1990; 
                 const totalPrice = quantity * pricePerBook;
 
-                // ข้อมูลที่จะบันทึกลงฐานข้อมูล
+                const slipBase64 = await window.compressImage(slipFileInput.files[0]);
+
                 const orderData = {
                     customerName: fullname,
                     phoneNumber: phone,
                     orderQuantity: quantity,
                     shippingAddress: address,
                     totalAmount: totalPrice,
+                    slipImage: slipBase64,
                     status: 'pending_verification',
                     orderDate: serverTimestamp(),
                     userId: currentUser.uid
                 };
 
-                // บันทึกข้อมูลลงในโฟลเดอร์เฉพาะ (wat_rakang_orders) จะไม่ทับกับเว็บอื่น!
                 const preordersRef = collection(db, 'wat_rakang_orders');
                 const docRef = await addDoc(preordersRef, orderData);
                 
-                document.getElementById('successMessage').innerText = `ขอบคุณคุณ ${fullname} บันทึกการจองสำเร็จ! (รหัสอ้างอิง: ${docRef.id.substring(0, 8)})`;
+                document.getElementById('successMessage').innerText = `ขอบคุณคุณ ${fullname} บันทึกการจองและแนบหลักฐานสำเร็จ! (รหัสอ้างอิง: ${docRef.id.substring(0, 8)})`;
                 document.getElementById('successModal').style.display = 'flex';
                 
-                // ล้างฟอร์ม
                 document.getElementById('preorderForm').reset();
+                window.resetSlipPreview();
                 window.calculateTotal();
 
             } catch (error) {
                 console.error("Error adding document: ", error);
-                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+                alert(`เกิดข้อผิดพลาดในการบันทึกข้อมูล: ${error.message}`);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalBtnText;
             }
         };
 
-        // ฟังก์ชันหลังบ้าน (ดึงข้อมูลมาแสดงในตารางแอดมิน)
-        window.fetchOrders = async function() {
+        // --- Admin Functions ---
+        window.loadAdminOrders = async function() {
             const tableBody = document.getElementById('adminTableBody');
-            tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">กำลังดึงข้อมูล...</td></tr>';
+            tableBody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-500">⏳ กำลังโหลดข้อมูลคำสั่งจอง...</td></tr>`;
+
             try {
-                // ดึงข้อมูลจากโฟลเดอร์ wat_rakang_orders
                 const preordersRef = collection(db, 'wat_rakang_orders');
-                const querySnapshot = await getDocs(preordersRef);
-                const orders = [];
-                
-                querySnapshot.forEach((doc) => { 
-                    orders.push({ id: doc.id, ...doc.data() }); 
-                });
-                
-                // เรียงวันที่จากล่าสุดไปเก่าสุด
-                orders.sort((a, b) => {
-                    const timeA = a.orderDate ? a.orderDate.toMillis() : 0;
-                    const timeB = b.orderDate ? b.orderDate.toMillis() : 0;
-                    return timeB - timeA;
+                const q = query(preordersRef, orderBy('orderDate', 'desc'));
+                const querySnapshot = await getDocs(q);
+
+                cachedOrders = [];
+                let totalBooksCount = 0;
+                let totalRevenueSum = 0;
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const orderItem = {
+                        id: docSnap.id,
+                        ...data,
+                        formattedDate: data.orderDate ? new Date(data.orderDate.toDate ? data.orderDate.toDate() : data.orderDate).toLocaleString('th-TH') : 'ไม่ระบุ'
+                    };
+                    cachedOrders.push(orderItem);
+                    totalBooksCount += (orderItem.orderQuantity || 0);
+                    totalRevenueSum += (orderItem.totalAmount || 0);
                 });
 
-                if (orders.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500 bg-gray-50">ยังไม่มีรายการสั่งจอง</td></tr>';
-                    return;
-                }
+                // Update Stats
+                document.getElementById('statTotalOrders').innerText = cachedOrders.length;
+                document.getElementById('statTotalBooks').innerText = totalBooksCount;
+                document.getElementById('statTotalRevenue').innerText = totalRevenueSum.toLocaleString() + ' ฿';
 
-                let html = '';
-                orders.forEach(order => {
-                    let dateStr = "ไม่มีข้อมูลวันที่";
-                    if(order.orderDate) {
-                        const date = order.orderDate.toDate();
-                        dateStr = date.toLocaleString('th-TH', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-                    }
-                    html += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-500">${dateStr}</td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900">${order.customerName}</div>
-                                <div class="text-xs text-gray-500">📞 ${order.phoneNumber}</div>
-                            </td>
-                            <td class="px-6 py-4 text-center text-sm font-medium text-gray-900">${order.orderQuantity}</td>
-                            <td class="px-6 py-4 text-right text-sm font-bold text-green-600">฿${order.totalAmount.toLocaleString()}</td>
-                        </tr>
-                    `;
-                });
-                tableBody.innerHTML = html;
+                window.renderAdminTable(cachedOrders);
+
             } catch (error) {
-                console.error("Fetch Error:", error);
-                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">ไม่สามารถดึงข้อมูลได้: ${error.message}</td></tr>`;
+                console.error("Admin Load Error:", error);
+                tableBody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}</td></tr>`;
             }
+        };
+
+        window.renderAdminTable = function(orders) {
+            const tableBody = document.getElementById('adminTableBody');
+            if (orders.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-500">ยังไม่มีรายการสั่งจองในระบบ</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = orders.map((order, idx) => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="py-3 px-4 text-xs font-mono text-gray-500">${idx + 1}</td>
+                    <td class="py-3 px-4 text-xs text-gray-500">${order.formattedDate}</td>
+                    <td class="py-3 px-4 font-medium text-gray-900">
+                        <div>${order.customerName}</div>
+                        <div class="text-xs text-gray-500">${order.phoneNumber}</div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="inline-block bg-navy-100 text-navy-900 font-bold px-2 py-0.5 rounded text-sm">${order.orderQuantity} ชุด</span>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-amber-600 text-right">${(order.totalAmount || 0).toLocaleString()} ฿</td>
+                    <td class="py-3 px-4 text-center">
+                        ${order.slipImage ? `
+                            <button onclick="window.viewSlipModal('${order.id}')" class="text-xs bg-navy-900 hover:bg-navy-800 text-gold-400 px-2.5 py-1 rounded font-medium shadow-sm transition">
+                                🖼️ ดูสลิป
+                            </button>
+                        ` : `<span class="text-xs text-red-400">ไม่มีสลิป</span>`}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <select onchange="window.updateOrderStatus('${order.id}', this.value)" class="text-xs p-1.5 rounded border border-gray-300 font-semibold ${order.status === 'verified' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                            <option value="pending_verification" ${order.status === 'pending_verification' ? 'selected' : ''}>⏳ รอตรวจสอบ</option>
+                            <option value="verified" ${order.status === 'verified' ? 'selected' : ''}>✅ ยืนยันแล้ว</option>
+                            <option value="rejected" ${order.status === 'rejected' ? 'selected' : ''}>❌ ยกเลิก</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.updateOrderStatus = async function(docId, newStatus) {
+            try {
+                const docRef = doc(db, 'wat_rakang_orders', docId);
+                await updateDoc(docRef, { status: newStatus });
+                const order = cachedOrders.find(o => o.id === docId);
+                if (order) order.status = newStatus;
+                alert('อัปเดตสถานะรายการเรียบร้อยแล้ว');
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ: ' + error.message);
+            }
+        };
+
+        window.viewSlipModal = function(docId) {
+            const order = cachedOrders.find(o => o.id === docId);
+            if (order && order.slipImage) {
+                document.getElementById('slipModalImage').src = order.slipImage;
+                document.getElementById('slipModalTitle').innerText = `หลักฐานการโอน: คุณ${order.customerName}`;
+                document.getElementById('slipViewModal').style.display = 'flex';
+            }
+        };
+
+        window.exportCSV = function() {
+            if (cachedOrders.length === 0) {
+                alert('ไม่มีข้อมูลรายการสั่งจองสำหรับส่งออก CSV');
+                return;
+            }
+
+            // UTF-8 BOM byte marker so Excel opens Thai fonts correctly
+            let csvContent = "\uFEFF";
+            csvContent += "ลำดับ,รหัสอ้างอิง,วันที่-เวลา,ชื่อผู้รับ,เบอร์โทรศัพท์,จำนวน (ชุด),ยอดเงินรวม (บาท),ที่อยู่จัดส่ง,สถานะ\n";
+
+            cachedOrders.forEach((order, index) => {
+                const cleanName = (order.customerName || '').replace(/"/g, '""');
+                const cleanPhone = (order.phoneNumber || '').replace(/"/g, '""');
+                const cleanAddress = (order.shippingAddress || '').replace(/"/g, '""').replace(/\r?\n|\r/g, " ");
+                let statusText = 'รอตรวจสอบ';
+                if (order.status === 'verified') statusText = 'ยืนยันแล้ว';
+                if (order.status === 'rejected') statusText = 'ยกเลิก';
+
+                const row = [
+                    index + 1,
+                    `"${order.id}"`,
+                    `"${order.formattedDate}"`,
+                    `"${cleanName}"`,
+                    `"${cleanPhone}"`,
+                    order.orderQuantity || 1,
+                    order.totalAmount || 0,
+                    `"${cleanAddress}"`,
+                    `"${statusText}"`
+                ].join(",");
+
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement("a");
+            const todayStr = new Date().toISOString().slice(0, 10);
+            
+            downloadLink.href = url;
+            downloadLink.download = `รายงานการสั่งจองหนังสือวัดระฆัง_${todayStr}.csv`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
         };
     </script>
 
@@ -184,17 +283,24 @@
 </head>
 <body class="text-gray-800 antialiased font-sans">
 
+    <!-- Navbar -->
     <header class="bg-navy-900 shadow-md sticky top-0 z-50 border-b border-gold-500/30">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="text-xl md:text-2xl font-bold text-gold-400 font-heading tracking-wide">
-                อนุสรณ์วัดระฆัง ฉบับสมบูรณ์
+            <div class="text-xl md:text-2xl font-bold text-gold-400 font-heading tracking-wide flex items-center gap-2">
+                <span>อนุสรณ์วัดระฆัง ฉบับสมบูรณ์</span>
             </div>
-            <a href="#preorder-section" class="bg-gold-500 hover:bg-gold-400 text-navy-900 px-4 py-2 md:px-6 md:py-2 rounded-md font-bold transition duration-300 shadow-md text-sm md:text-base">
-                สั่งจองทันที
-            </a>
+            <div class="flex items-center gap-2 md:gap-4">
+                <button onclick="window.openAdminLoginModal()" class="text-xs md:text-sm text-gray-300 hover:text-gold-400 border border-gray-600 px-3 py-1.5 rounded hover:border-gold-400 transition">
+                    🔑 แอดมิน
+                </button>
+                <a href="#preorder-section" class="bg-gold-500 hover:bg-gold-400 text-navy-900 px-4 py-2 md:px-6 md:py-2 rounded-md font-bold transition duration-300 shadow-md text-sm md:text-base">
+                    สั่งจองทันที
+                </a>
+            </div>
         </div>
     </header>
 
+    <!-- Hero Section -->
     <section class="hero-pattern py-12 md:py-20 overflow-hidden text-white border-b-4 border-gold-500">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col lg:flex-row gap-12 items-center">
@@ -225,24 +331,18 @@
 
                 <div class="lg:w-1/2 order-1 lg:order-2 flex justify-center relative">
                     <div class="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-20 w-3/4 h-3/4 m-auto"></div>
-                    
                     <div class="relative z-10 w-64 sm:w-80 md:w-96 lg:w-[380px] aspect-[1/1.4] bg-navy-900 border border-gold-500/40 rounded-r-2xl rounded-l-md book-shadow transition-transform duration-500 hover:-translate-y-3 hover:scale-105 overflow-hidden flex flex-col justify-center items-center">
-                        
-                        <img src="1000013959.jpg" 
+                        <img src="./1000013959.jpg" 
                              alt="ปกหนังสือวัตถุมงคล สายอนุสรณ์วัดระฆัง" 
                              onerror="this.style.display='none'; document.getElementById('css-fallback').style.display='flex';"
                              class="absolute inset-0 w-full h-full object-cover z-20">
                         
                         <div id="css-fallback" class="absolute inset-0 w-full h-full hidden flex-col justify-center items-center p-6 text-center z-10">
                             <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1629196914225-83eebcd35b43?auto=format&fit=crop&q=80&w=600')] opacity-10 mix-blend-overlay"></div>
-                            
                             <div class="relative z-20 text-gold-400 font-heading w-full border border-gold-500/20 p-4 h-full flex flex-col justify-center items-center rounded-sm">
                                 <h3 class="text-2xl sm:text-3xl font-bold mb-2">วัตถุมงคล</h3>
                                 <h4 class="text-xl sm:text-2xl">สายอนุสรณ์วัดระฆัง</h4>
                                 <p class="text-base sm:text-lg mt-2 text-gold-300">ฉบับสมบูรณ์</p>
-                                <div class="my-8 w-16 h-16 border-2 border-gold-500/40 rounded-full flex items-center justify-center">
-                                    <span class="text-xs text-gold-500/60 font-sans">ตราวัด</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -251,6 +351,7 @@
         </div>
     </section>
 
+    <!-- Details Section -->
     <section class="py-16 bg-white">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl md:text-4xl font-bold text-center font-heading text-navy-900 mb-12">
@@ -283,10 +384,12 @@
         </div>
     </section>
 
+    <!-- Form Section -->
     <section id="preorder-section" class="py-16 bg-navy-900 relative">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
+                <!-- Bank Info Column -->
                 <div class="lg:col-span-5 bg-pink-50 rounded-3xl p-1 border-4 border-pink-200 shadow-xl">
                     <div class="bg-white rounded-2xl p-6 h-full text-center">
                         <div class="flex justify-center items-center gap-3 mb-6">
@@ -313,21 +416,20 @@
                             </div>
                         </div>
 
-                        <div class="bg-pink-50 text-pink-600 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border border-pink-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                            กรุณาตรวจสอบชื่อบัญชีก่อนโอนเงิน!
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-xs text-left">
+                            ⚠️ <strong>ข้อแนะนำ:</strong> กรุณาโอนเงินเข้าบัญชีด้านบนก่อน จากนั้นแนบรูปภาพสลิปการโอนเงินเพื่อยืนยันคำสั่งจอง
                         </div>
                     </div>
                 </div>
 
+                <!-- Form Column -->
                 <div class="lg:col-span-7 bg-white rounded-3xl shadow-2xl overflow-hidden">
                     <div class="bg-gold-500 px-8 py-5 text-navy-900 text-center border-b border-gold-600">
                         <h2 class="text-2xl font-bold font-heading">แบบฟอร์มแจ้งการสั่งจอง</h2>
-                        <p class="text-navy-800/80 text-sm mt-1">กรุณาโอนเงินและกรอกข้อมูลด้านล่างให้ครบถ้วน</p>
+                        <p class="text-navy-800/80 text-sm mt-1">กรุณาโอนเงินและแนบสลิปพร้อมกรอกข้อมูลให้ครบถ้วน</p>
                     </div>
                     
                     <form id="preorderForm" class="p-6 md:p-8" onsubmit="window.processPreOrder(event)">
-                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ - นามสกุล (ผู้รับ) <span class="text-red-500">*</span></label>
@@ -350,9 +452,37 @@
                             </select>
                         </div>
 
-                        <div class="mb-6">
+                        <div class="mb-5">
                             <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่จัดส่งพัสดุ <span class="text-red-500">*</span></label>
                             <textarea id="address" required rows="3" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none resize-none" placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"></textarea>
+                        </div>
+
+                        <!-- Slip File Upload Field -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                แนบหลักฐานการโอนเงิน (สลิปโอนเงิน) <span class="text-red-500">*</span>
+                            </label>
+                            
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 hover:border-gold-500 rounded-xl bg-slate-50 transition cursor-pointer relative" id="dropArea" onclick="document.getElementById('slipFile').click()">
+                                <div class="text-center" id="uploadPlaceholder">
+                                    <div class="text-3xl mb-2">📄📌</div>
+                                    <div class="flex text-sm text-gray-600 justify-center">
+                                        <span class="relative font-semibold text-gold-600 hover:text-gold-500">
+                                            คลิกเพื่ออัปโหลดสลิปโอนเงิน
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">รองรับไฟล์รูปภาพ JPG, PNG, WEBP</p>
+                                </div>
+
+                                <div id="slipPreviewContainer" class="hidden flex-col items-center w-full">
+                                    <img id="slipPreviewImg" src="" alt="พรีวิวสลิป" class="max-h-48 rounded-lg shadow border border-gray-200 mb-2 object-contain">
+                                    <p id="slipFileName" class="text-xs text-gray-600 font-medium mb-1 truncate max-w-xs"></p>
+                                    <button type="button" onclick="event.stopPropagation(); window.resetSlipPreview();" class="text-xs text-red-500 hover:underline font-semibold">
+                                        ❌ ยกเลิก / เปลี่ยนรูป
+                                    </button>
+                                </div>
+                            </div>
+                            <input id="slipFile" type="file" accept="image/*" required class="hidden" onchange="window.handleFileSelect(this)">
                         </div>
 
                         <div class="bg-navy-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-navy-100">
@@ -369,50 +499,142 @@
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="bg-navy-900 text-gray-400 py-8 text-center border-t border-navy-800">
-        <div class="max-w-7xl mx-auto px-4">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
             <p>&copy; 2026 หนังสือวัดระฆัง 100 ปี ฉบับสมบูรณ์. สงวนลิขสิทธิ์.</p>
-            <button onclick="document.getElementById('adminModal').style.display='flex'; window.fetchOrders();" class="mt-4 text-xs text-navy-600 hover:text-gold-500 transition">
-                [ เข้าสู่ระบบหลังบ้าน ]
+            <button onclick="window.openAdminLoginModal()" class="text-gray-400 hover:text-gold-400 underline transition">
+                ระบบจัดการสำหรับผู้ดูแลระบบ (Admin Portal)
             </button>
         </div>
     </footer>
 
+    <!-- Success Modal -->
     <div id="successModal" class="fixed inset-0 bg-navy-900/80 z-[100] hidden items-center justify-center px-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500 text-3xl">✓</div>
             <h3 class="text-2xl font-bold font-heading text-navy-900 mb-2">บันทึกข้อมูลสำเร็จ!</h3>
-            <p class="text-gray-600 mb-6 text-sm" id="successMessage">ระบบได้รับข้อมูลการจองของท่านแล้ว</p>
+            <p class="text-gray-600 mb-6 text-sm" id="successMessage">ระบบได้รับข้อมูลการจองและหลักฐานการโอนเงินของท่านแล้ว</p>
             <button onclick="document.getElementById('successModal').style.display='none'" class="w-full bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold py-2.5 rounded-xl">
                 ปิดหน้าต่างนี้
             </button>
         </div>
     </div>
 
-    <div id="adminModal" class="fixed inset-0 bg-navy-900/90 z-[100] hidden items-center justify-center px-4 backdrop-blur-sm py-10">
-        <div class="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-full flex flex-col shadow-2xl">
-            <div class="flex justify-between items-center mb-4 border-b pb-4">
-                <h3 class="text-2xl font-bold font-heading text-navy-900">
-                    📋 รายการสั่งจองหนังสือ
-                </h3>
-                <button onclick="document.getElementById('adminModal').style.display='none'" class="text-gray-500 hover:text-red-500 text-3xl font-bold leading-none">&times;</button>
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-navy-900/80 z-[110] hidden items-center justify-center px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-gold-500/30">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-navy-900 text-gold-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">🔑</div>
+                <h3 class="text-2xl font-bold font-heading text-navy-900">เข้าสู่ระบบแอดมิน</h3>
+                <p class="text-xs text-gray-500 mt-1">เฉพาะผู้ดูแลระบบเพื่อดูรายงานและสรุปยอดจอง</p>
             </div>
             
-            <div class="overflow-y-auto flex-1 border rounded-lg">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-navy-50 sticky top-0">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-navy-900 uppercase">วันที่จอง</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-navy-900 uppercase">ชื่อ - เบอร์โทร</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold text-navy-900 uppercase">จำนวน (ชุด)</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-navy-900 uppercase">ยอดรวม</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTableBody" class="bg-white divide-y divide-gray-200">
-                        <tr><td colspan="4" class="px-6 py-4 text-center">กำลังโหลด...</td></tr>
-                    </tbody>
-                </table>
+            <form onsubmit="window.handleAdminLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านแอดมิน</label>
+                    <input type="password" id="adminPasswordInput" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none text-center tracking-widest text-lg" placeholder="••••••••">
+                    <p class="text-[11px] text-amber-600 mt-1.5 text-center">* รหัสผ่านสำหรับทดสอบ: <strong class="underline">admin1234</strong></p>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('adminLoginModal').style.display='none'" class="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2.5 rounded-xl transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="w-1/2 bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold py-2.5 rounded-xl transition">
+                        เข้าสู่ระบบ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Modal -->
+    <div id="adminDashboardModal" class="fixed inset-0 bg-navy-900/90 z-[120] hidden flex-col overflow-y-auto p-4 sm:p-6 backdrop-blur-md">
+        <div class="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl my-auto overflow-hidden flex flex-col border border-gold-500/40">
+            
+            <!-- Dashboard Header -->
+            <div class="bg-navy-900 px-6 py-5 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gold-500/30">
+                <div>
+                    <h2 class="text-2xl font-bold font-heading text-gold-400 flex items-center gap-2">
+                        <span>📊 รายงานหลังบ้าน - สรุปการสั่งจอง</span>
+                    </h2>
+                    <p class="text-xs text-gray-300 mt-0.5">ระบบจัดการและสรุปรายงาน CSV เฉพาะผู้ดูแลระบบ</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="window.exportCSV()" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow flex items-center gap-1.5">
+                        <span>📥 ดาวน์โหลดรายงาน CSV (Excel)</span>
+                    </button>
+                    <button onclick="document.getElementById('adminDashboardModal').style.display='none'" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-3.5 py-2 rounded-xl text-sm font-semibold transition">
+                        ✕ ปิด
+                    </button>
+                </div>
             </div>
+
+            <div class="p-6 overflow-x-auto">
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
+                        <div class="text-gray-500 text-xs font-semibold mb-1">ยอดสั่งจองทั้งหมด</div>
+                        <div class="text-3xl font-bold text-navy-900 font-heading" id="statTotalOrders">0</div>
+                        <div class="text-[11px] text-gray-400">รายการ</div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-center">
+                        <div class="text-amber-800 text-xs font-semibold mb-1">จำนวนชุดรวมที่ถูกสั่งจอง</div>
+                        <div class="text-3xl font-bold text-amber-600 font-heading" id="statTotalBooks">0</div>
+                        <div class="text-[11px] text-amber-700">ชุด (Box Set)</div>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center">
+                        <div class="text-emerald-800 text-xs font-semibold mb-1">มูลค่ารวมทั้งหมด</div>
+                        <div class="text-3xl font-bold text-emerald-600 font-heading" id="statTotalRevenue">0 ฿</div>
+                        <div class="text-[11px] text-emerald-700">บาท</div>
+                    </div>
+                </div>
+
+                <!-- Action Bar & Table -->
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-navy-900 font-heading">ตารางคำสั่งจองทั้งหมด</h3>
+                    <button onclick="window.loadAdminOrders()" class="text-xs text-navy-900 hover:text-gold-600 font-semibold bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition">
+                        🔄 รีเฟรชข้อมูล
+                    </button>
+                </div>
+
+                <div class="border rounded-2xl overflow-hidden shadow-sm">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                            <tr class="bg-navy-900 text-gold-400 text-xs uppercase font-semibold">
+                                <th class="py-3 px-4">#</th>
+                                <th class="py-3 px-4">วันที่ - เวลา</th>
+                                <th class="py-3 px-4">ชื่อ - เบอร์โทร</th>
+                                <th class="py-3 px-4 text-center">จำนวน</th>
+                                <th class="py-3 px-4 text-right">ยอดรวม</th>
+                                <th class="py-3 px-4 text-center">หลักฐานโอนเงิน</th>
+                                <th class="py-3 px-4 text-center">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="divide-y divide-gray-200 text-sm">
+                            <tr>
+                                <td colspan="7" class="py-8 text-center text-gray-500">⏳ กำลังโหลดข้อมูล...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Slip Preview Modal for Admin -->
+    <div id="slipViewModal" class="fixed inset-0 bg-navy-900/90 z-[130] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center">
+            <h4 class="text-lg font-bold font-heading text-navy-900 mb-4 text-center" id="slipModalTitle">หลักฐานการโอนเงิน</h4>
+            <div class="max-h-[70vh] overflow-y-auto mb-6 w-full flex justify-center bg-gray-100 p-2 rounded-xl">
+                <img id="slipModalImage" src="" alt="สลิปโอนเงิน" class="max-w-full rounded-lg object-contain">
+            </div>
+            <button onclick="document.getElementById('slipViewModal').style.display='none'" class="w-full bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold py-2.5 rounded-xl">
+                ปิดหน้าต่าง
+            </button>
         </div>
     </div>
 
@@ -423,6 +645,88 @@
             document.getElementById('totalPrice').innerText = total.toLocaleString() + ' บาท';
         };
         window.calculateTotal(); 
+
+        window.handleFileSelect = function(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    document.getElementById('slipPreviewImg').src = e.target.result;
+                    document.getElementById('slipFileName').innerText = file.name;
+                    document.getElementById('uploadPlaceholder').classList.add('hidden');
+                    document.getElementById('slipPreviewContainer').classList.remove('hidden');
+                    document.getElementById('slipPreviewContainer').classList.add('flex');
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.resetSlipPreview = function() {
+            const slipInput = document.getElementById('slipFile');
+            slipInput.value = '';
+            document.getElementById('slipPreviewImg').src = '';
+            document.getElementById('slipFileName').innerText = '';
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.getElementById('slipPreviewContainer').classList.add('hidden');
+            document.getElementById('slipPreviewContainer').classList.remove('flex');
+        };
+
+        window.compressImage = function(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 800; 
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('canvas');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+
+        window.openAdminLoginModal = function() {
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminLoginModal').style.display = 'flex';
+        };
+
+        window.handleAdminLogin = function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPasswordInput').value;
+            // Admin default passcode
+            if (password === 'admin1234') {
+                document.getElementById('adminLoginModal').style.display = 'none';
+                document.getElementById('adminDashboardModal').style.display = 'flex';
+                window.loadAdminOrders();
+            } else {
+                alert('รหัสผ่านไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง');
+            }
+        };
     </script>
 </body>
 </html>
