@@ -1,8 +1,3 @@
-<!-- Chosen Palette: Navy and Gold Accent Theme (Navy: #020617, Gold: #eab308) -->
-<!-- Application Structure Plan: Landing page layout designed for pre-ordering valuable sacred books with integrated hidden Admin Dashboard. Features a prominent product presentation with realistic 3D book box set preview framed with gold borders, Hero section with pricing highlight, Box Set details section, Payment/Bank Transfer details side-by-side with Order Form, Slip Upload field with required validation & image preview, Success Modal overlay, and a secret-access Admin Dashboard Modal (triggered via 5 clicks on footer copyright or #admin URL hash) with order stats, order table, slip viewer, status management, and UTF-8 CSV exporter. -->
-<!-- Visualization & Content Choices: Tailwind CSS for clean responsive layout, Firebase Firestore (JS SDK) for secure order storage with base64 compressed slip storage and real-time/admin doc queries, interactive JavaScript for real-time total price calculation, slip image handling, and UTF-8 BOM CSV generation for Excel. Hidden secret triggers for Admin Panel authentication without public visual exposure. -->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -279,7 +274,7 @@
             box-shadow: -15px 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 25px 2px rgba(234, 179, 8, 0.25); 
         }
         .gold-border-glow {
-            box-shadow: inset 0 0 15px rgba(234, 179, 8, 0.3), 0 0 15px rgba(234, 179, 8, 0.2);
+            box-shadow: inset 0 0 15px rgba(234, 179, 8, 0.3), 0 0 20px rgba(234, 179, 8, 0.25);
         }
     </style>
 </head>
@@ -332,27 +327,28 @@
                 <div class="lg:w-1/2 order-1 lg:order-2 flex justify-center relative">
                     <div class="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-25 w-3/4 h-3/4 m-auto"></div>
                     
-                    <!-- 3D Book Frame Container -->
-                    <div class="relative z-10 w-64 sm:w-80 md:w-96 lg:w-[360px] aspect-[1/1.9] bg-navy-900 border-2 border-gold-400/70 rounded-xl book-shadow gold-border-glow transition-transform duration-500 hover:-translate-y-3 hover:scale-105 overflow-hidden flex flex-col justify-center items-center group">
+                    <!-- Box Set Presentation Frame -->
+                    <div class="relative z-10 w-72 sm:w-80 md:w-96 lg:w-[420px] aspect-[1/1.05] bg-navy-900 border-2 border-gold-400/80 rounded-xl book-shadow gold-border-glow transition-transform duration-500 hover:-translate-y-2 hover:scale-105 overflow-hidden flex flex-col justify-center items-center group p-1.5">
                         
-                        <!-- Inner Gold Accent Border -->
-                        <div class="absolute inset-2 border border-gold-500/40 rounded-lg pointer-events-none z-30"></div>
+                        <!-- Inner Gold Frame Line -->
+                        <div class="absolute inset-3 border border-gold-500/30 rounded-lg pointer-events-none z-30"></div>
 
-                        <!-- Book Image from repository -->
+                        <!-- Main Box Set Image -->
                         <img src="book-cover.jpg" 
-                             alt="รูปภาพปกหนังสือวัตถุมงคล สายอนุสรณ์วัดระฆัง ฉบับสมบูรณ์" 
+                             alt="รูปภาพปกหนังสือวัตถุมงคล สายอนุสรณ์วัดระฆัง ฉบับสมบูรณ์ Box Set" 
                              onerror="this.style.display='none'; document.getElementById('css-fallback').style.display='flex';"
-                             class="absolute inset-0 w-full h-full object-cover z-20 transition-transform duration-700 group-hover:scale-105">
+                             class="w-full h-full object-cover rounded-lg z-20 transition-transform duration-700 group-hover:scale-105">
                         
-                        <!-- CSS Fallback Display if image is not loaded yet -->
-                        <div id="css-fallback" class="absolute inset-0 w-full h-full hidden flex-col justify-between items-center p-6 text-center z-10 bg-navy-900 border-4 border-gold-500/30">
+                        <!-- Fallback Display if book-cover.jpg is missing -->
+                        <div id="css-fallback" class="absolute inset-2 hidden flex-col justify-between items-center p-6 text-center z-10 bg-gradient-to-b from-navy-900 via-navy-800 to-navy-900 border-2 border-gold-500/40 rounded-lg">
                             <div class="w-full border-b border-gold-500/30 pb-3 pt-2">
-                                <div class="text-gold-400 text-xs font-heading tracking-widest uppercase">THE COMPLETE EDITION</div>
+                                <div class="text-gold-400 text-xs font-heading tracking-widest uppercase">THE COMPLETE EDITION (BOX SET)</div>
                             </div>
                             <div class="relative z-20 text-gold-400 font-heading w-full py-6 flex flex-col justify-center items-center">
-                                <h3 class="text-2xl sm:text-3xl font-bold mb-2 tracking-wide text-gold-300">วัตถุมงคล</h3>
+                                <div class="text-4xl mb-3">📖✨</div>
+                                <h3 class="text-2xl sm:text-3xl font-bold mb-1 tracking-wide text-gold-300">วัตถุมงคล</h3>
                                 <h4 class="text-xl sm:text-2xl text-gold-400">สายอนุสรณ์วัดระฆัง</h4>
-                                <p class="text-lg mt-3 text-gold-500 font-semibold border-t border-b border-gold-500/40 py-1 px-4">ฉบับสมบูรณ์</p>
+                                <p class="text-lg mt-3 text-gold-500 font-semibold border-t border-b border-gold-500/40 py-1 px-4">ฉบับสมบูรณ์ (บรรจุ 2 เล่ม)</p>
                             </div>
                             <div class="w-full border-t border-gold-500/30 pt-3">
                                 <p class="text-[10px] text-gold-300/80 font-mono tracking-tighter uppercase">SACRED AMULETS WAT RAKANG COMMEMORATIVE LINE</p>
@@ -361,6 +357,7 @@
 
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
