@@ -1,3 +1,8 @@
+<!-- Chosen Palette: Navy and Gold Accent Theme (Navy: #020617, Gold: #eab308) -->
+<!-- Application Structure Plan: Landing page layout designed for pre-ordering valuable sacred books with integrated hidden Admin Dashboard. Features a prominent product presentation with realistic 3D book box set preview framed with gold borders, Hero section with pricing highlight, Box Set details section, Payment/Bank Transfer details side-by-side with Order Form, Slip Upload field with required validation & image preview, Success Modal overlay, smart fallback for cover image filenames (supporting book-cover.jpg and book-cover.jpg.jpg), and a secret-access Admin Dashboard Modal (triggered via 5 clicks on footer copyright or #admin URL hash) with order stats, order table, slip viewer, status management, and UTF-8 CSV exporter. -->
+<!-- Visualization & Content Choices: Tailwind CSS for clean responsive layout, Firebase Firestore (JS SDK) for secure order storage with base64 compressed slip storage and real-time/admin doc queries, interactive JavaScript for real-time total price calculation, slip image handling, smart img onerror handler for double file extensions, and UTF-8 BOM CSV generation for Excel. Hidden secret triggers for Admin Panel authentication without public visual exposure. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -333,13 +338,13 @@
                         <!-- Inner Gold Frame Line -->
                         <div class="absolute inset-3 border border-gold-500/30 rounded-lg pointer-events-none z-30"></div>
 
-                        <!-- Main Box Set Image -->
+                        <!-- Main Box Set Image with Smart Fallback for double extension (.jpg.jpg) -->
                         <img src="book-cover.jpg" 
                              alt="รูปภาพปกหนังสือวัตถุมงคล สายอนุสรณ์วัดระฆัง ฉบับสมบูรณ์ Box Set" 
-                             onerror="this.style.display='none'; document.getElementById('css-fallback').style.display='flex';"
+                             onerror="if (!this.dataset.retried) { this.dataset.retried = 'true'; this.src = 'book-cover.jpg.jpg'; } else { this.style.display='none'; document.getElementById('css-fallback').style.display='flex'; }"
                              class="w-full h-full object-cover rounded-lg z-20 transition-transform duration-700 group-hover:scale-105">
                         
-                        <!-- Fallback Display if book-cover.jpg is missing -->
+                        <!-- Fallback Display if image is totally missing -->
                         <div id="css-fallback" class="absolute inset-2 hidden flex-col justify-between items-center p-6 text-center z-10 bg-gradient-to-b from-navy-900 via-navy-800 to-navy-900 border-2 border-gold-500/40 rounded-lg">
                             <div class="w-full border-b border-gold-500/30 pb-3 pt-2">
                                 <div class="text-gold-400 text-xs font-heading tracking-widest uppercase">THE COMPLETE EDITION (BOX SET)</div>
