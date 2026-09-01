@@ -84,11 +84,11 @@
                 <div class="lg:w-1/2 order-1 lg:order-2 flex justify-center relative">
                     <div class="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-20 w-3/4 h-3/4 m-auto"></div>
                     <!-- กรอบภาพ Box Set สัดส่วน 1:1.05 -->
-                    <div class="relative z-10 w-64 sm:w-80 md:w-96 lg:w-[420px] aspect-[1/1.05] bg-navy-900 border-2 border-gold-500/60 rounded-sm book-shadow transition-transform duration-500 hover:-translate-y-3 hover:scale-105 overflow-hidden flex flex-col justify-center items-center relative shadow-[inset_0_0_30px_rgba(0,0,0,0.9),_0_0_25px_rgba(250,204,21,0.4)]">
+                    <div class="relative z-10 w-64 sm:w-80 md:w-96 lg:w-[420px] aspect-[1/1.05] bg-navy-900 border-2 border-gold-500/60 rounded-sm book-shadow transition-transform duration-500 hover:-translate-y-3 hover:scale-105 overflow-hidden flex flex-col justify-center items-center shadow-[inset_0_0_30px_rgba(0,0,0,0.9),_0_0_25px_rgba(250,204,21,0.4)]">
                         <!-- กรอบทองซ้อนด้านใน (Double border) -->
                         <div class="absolute inset-2 border-[1.5px] border-gold-500/40 rounded-sm z-30 pointer-events-none"></div>
                         
-                        <!-- Smart Image Fallback (รองรับทั้งชื่อปกติและชื่อซ้อน .jpg.jpg) -->
+                        <!-- Smart Image Fallback -->
                         <img src="./book-cover.jpg" alt="ปกหนังสือ Box Set" onerror="if(this.src.indexOf('.jpg.jpg') === -1) { this.src='./book-cover.jpg.jpg'; } else { this.style.display='none'; document.getElementById('css-fallback').style.display='flex'; }" class="absolute inset-0 w-full h-full object-cover z-20">
                         
                         <!-- Fallback กรณีไม่พบรูปภาพเลย -->
@@ -179,7 +179,7 @@
                 <div class="lg:col-span-7 bg-white rounded-3xl shadow-2xl overflow-hidden">
                     <div class="bg-gold-500 px-8 py-5 text-navy-900 text-center border-b border-gold-600">
                         <h2 class="text-2xl font-bold font-heading">แบบฟอร์มสั่งจองและแนบสลิป</h2>
-                        <p class="text-navy-800/80 text-sm mt-1">กรุณากรอกข้อมูลและแนบสลิปให้ครบถ้วนเพื่อรันหมายเลข</p>
+                        <p class="text-navy-800/80 text-sm mt-1">กรุณากรอกข้อมูลและแนบสลิปให้ครบถ้วน</p>
                     </div>
                     
                     <form id="preorderForm" class="p-6 md:p-8" onsubmit="window.processPreOrder(event)">
@@ -196,20 +196,21 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนชุดที่ต้องการ <span class="text-red-500">*</span></label>
-                                <input type="number" id="quantity" required min="1" value="1" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none" oninput="window.calculateTotal()" placeholder="ระบุตัวเลข (ชุด)">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนชุดที่ต้องการ (พิมพ์ตัวเลขได้เอง) <span class="text-red-500">*</span></label>
+                                <input type="number" id="quantity" required min="1" value="1" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none" placeholder="ระบุจำนวน (ชุด)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">วิธีการจัดส่ง <span class="text-red-500">*</span></label>
-                                <select id="shipping" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none bg-white" onchange="window.calculateTotal()">
-                                    <option value="parcel">จัดส่งพัสดุ (200บ. / 3 เล่มขึ้นไปเหมา 500บ.)</option>
+                                <select id="shipping" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none bg-white">
+                                    <option value="parcel">จัดส่งพัสดุ (ชุดละ 200บ. / 3 ชุดขึ้นไปเหมา 500บ.)</option>
                                     <option value="pickup">รับด้วยตนเอง (ฟรีค่าส่ง)</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="mb-5">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่จัดส่งพัสดุ (ถ้าเลือกรับเอง ข้ามได้)</label>
+                        <!-- Address container id added for hide/show logic -->
+                        <div id="addressContainer" class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่จัดส่งพัสดุ <span class="text-red-500">*</span></label>
                             <textarea id="address" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-navy-900 outline-none resize-none" placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"></textarea>
                         </div>
 
@@ -227,7 +228,10 @@
                         <div class="bg-navy-50 p-4 rounded-xl mb-6 border border-navy-100 flex flex-col items-center">
                             <div class="text-navy-900 font-medium mb-1">ยอดที่ต้องโอนชำระ (รวมค่าส่ง):</div>
                             <div class="text-3xl font-bold text-gold-600 font-heading mb-1" id="totalPrice">1,980 บาท</div>
-                            <div class="text-sm text-gray-500" id="totalDetail">1,980 บาท (ค่าส่ง 200 บาท)</div>
+                            <div class="text-sm text-gray-500 mb-3" id="totalDetail">1 ชุด (1,980 บาท) + ค่าส่ง 200 บาท</div>
+                            <button type="button" onclick="window.calculateTotal(true)" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-1.5 rounded-full text-sm font-bold transition shadow-sm border border-blue-200">
+                                🔍 กดเพื่อดูสรุปยอดโอนอีกครั้ง
+                            </button>
                         </div>
 
                         <button type="submit" id="submitBtn" disabled class="w-full bg-navy-900 hover:bg-navy-800 disabled:bg-gray-400 text-gold-400 font-bold py-3.5 rounded-xl text-lg transition duration-300 font-heading tracking-wide">
@@ -257,12 +261,33 @@
         </div>
     </div>
 
-    <!-- Success Modal (ไม่โชว์เลข) -->
+    <!-- Transfer Total Popup Modal -->
+    <div id="transferTotalModal" class="fixed inset-0 bg-navy-900/80 z-[200] hidden items-center justify-center px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform transition-all scale-100">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-blue-100 shadow-inner">
+                <span class="text-4xl">💰</span>
+            </div>
+            <h3 class="text-2xl font-bold text-navy-900 mb-2 font-heading">ยอดชำระเงิน</h3>
+            <p class="text-gray-500 mb-4 text-sm">กรุณาโอนเงินตามยอดด้านล่างนี้ให้ถูกต้อง</p>
+            
+            <div class="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 shadow-sm">
+                <div class="text-4xl font-bold text-gold-600 font-heading mb-2" id="popupTotalAmount">1,980 บาท</div>
+                <div class="text-sm text-gray-600 font-medium" id="popupTotalDetailText">1 ชุด (1,980 บาท) + ค่าส่ง 200 บาท</div>
+            </div>
+            
+            <button type="button" onclick="document.getElementById('transferTotalModal').style.display='none'" class="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold py-3.5 rounded-xl text-lg transition duration-300 shadow-md">
+                รับทราบ และดำเนินการต่อ
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
     <div id="successModal" class="fixed inset-0 bg-navy-900/80 z-[100] hidden items-center justify-center px-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500 text-3xl">✓</div>
             <h3 class="text-2xl font-bold font-heading text-navy-900 mb-2">บันทึกข้อมูลสำเร็จ!</h3>
             <p class="text-gray-700 mb-6 text-sm" id="successMessage"></p>
+            <!-- ซ่อนกล่องโชว์เลขที่เคยอยู่ตรงนี้ออกไปแล้ว ตามคำขอ -->
             <button onclick="document.getElementById('successModal').style.display='none'" class="w-full bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold py-2.5 rounded-xl">
                 ปิดหน้าต่างนี้
             </button>
@@ -285,7 +310,7 @@
 
     <!-- Admin Dashboard Modal -->
     <div id="adminModal" class="fixed inset-0 bg-gray-100 z-[100] hidden items-center justify-center p-2 sm:p-6 overflow-hidden">
-        <div class="bg-white rounded-3xl p-4 sm:p-6 w-full max-w-7xl h-full flex flex-col shadow-2xl">
+        <div class="bg-white rounded-3xl p-4 sm:p-6 w-full max-w-7xl h-full max-h-full flex flex-col shadow-2xl">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 pb-4 border-b">
                 <h3 class="text-xl sm:text-2xl font-bold font-heading text-navy-900 flex items-center gap-2">
                     📊 ระบบจัดการหลังบ้าน
@@ -308,7 +333,7 @@
                     <div class="text-2xl sm:text-3xl font-bold text-navy-900" id="statTotalOrders">0</div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                    <div class="text-purple-600 text-xs sm:text-sm font-bold mb-1">จำนวนชุดที่ถูกจอง (เล่ม)</div>
+                    <div class="text-purple-600 text-xs sm:text-sm font-bold mb-1">จำนวนชุดที่ถูกจอง (ชุด)</div>
                     <div class="text-2xl sm:text-3xl font-bold text-navy-900" id="statTotalBooks">0</div>
                 </div>
                 <div class="bg-green-50 p-4 rounded-xl border border-green-100">
@@ -372,7 +397,7 @@
                     <input type="text" id="manualName" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="ชื่อ-นามสกุล">
                 </div>
                 <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนชุด (เล่ม) <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนชุด (ชุด) <span class="text-red-500">*</span></label>
                     <input type="number" id="manualQty" required min="1" value="1" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="bg-blue-50 p-3 rounded text-xs text-blue-800 mb-4">
@@ -406,12 +431,14 @@
         let currentUser = null;
         let uploadedSlipBase64 = null;
 
+        // ฟังก์ชันแจ้งเตือนสไตล์สวยงาม
         window.showAlert = function(message, title = "แจ้งเตือน") {
             document.getElementById('alertTitle').innerText = title;
             document.getElementById('alertMessage').innerText = message;
             document.getElementById('customAlertModal').style.display = 'flex';
         };
 
+        // ลงชื่อเข้าใช้แบบไม่ระบุตัวตน
         async function initAuth() {
             try {
                 const userCredential = await signInAnonymously(auth);
@@ -426,6 +453,7 @@
         }
         initAuth();
 
+        // จัดการบีบอัดรูปสลิปก่อนอัปโหลด
         document.getElementById('slipImage').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -458,12 +486,13 @@
             };
         });
 
-        window.calculateTotal = function() {
+        // คำนวณยอดเงิน ซ่อนแสดงที่อยู่ และแสดง Popup
+        window.calculateTotal = function(showPopup = false) {
             const qtyInput = document.getElementById('quantity').value;
             let qty = parseInt(qtyInput);
             if (isNaN(qty) || qty < 1) {
                 qty = 1; 
-                document.getElementById('quantity').value = ""; // Clear if invalid
+                document.getElementById('quantity').value = 1; 
             }
             
             const shippingType = document.getElementById('shipping').value;
@@ -471,16 +500,28 @@
             let bookTotal = qty * pricePerBook;
             let shippingFee = 0;
 
+            // ตรรกะจัดการการซ่อน/แสดงช่องที่อยู่และค่าส่ง
+            const addressContainer = document.getElementById('addressContainer');
+            const addressInput = document.getElementById('address');
+
             if (shippingType === 'parcel') {
                 if (qty >= 3) {
                     shippingFee = 500;
                 } else {
                     shippingFee = qty * 200;
                 }
+                // แสดงช่องกรอกที่อยู่ บังคับให้กรอก
+                addressContainer.style.display = 'block';
+                addressInput.required = true;
+            } else {
+                // หากรับด้วยตนเอง ฟรีค่าส่ง ซ่อนช่องที่อยู่ และเลิกบังคับกรอก
+                shippingFee = 0;
+                addressContainer.style.display = 'none';
+                addressInput.required = false;
             }
 
             const total = bookTotal + shippingFee;
-            let detailText = `${bookTotal.toLocaleString()} บาท`;
+            let detailText = `${qty} ชุด (${bookTotal.toLocaleString()} บาท)`;
             if (shippingFee > 0) {
                 detailText += ` + ค่าส่ง ${shippingFee.toLocaleString()} บาท`;
             } else {
@@ -489,12 +530,16 @@
 
             document.getElementById('totalPrice').innerText = total.toLocaleString() + ' บาท';
             document.getElementById('totalDetail').innerText = detailText;
+
+            // เรียก Pop-up ยอดโอนหากระบุให้โชว์
+            if (showPopup) {
+                document.getElementById('popupTotalAmount').innerText = total.toLocaleString() + ' บาท';
+                document.getElementById('popupTotalDetailText').innerText = detailText;
+                document.getElementById('transferTotalModal').style.display = 'flex';
+            }
         };
 
-        // -----------------------------------------------------
-        // ระบบรันหมายเลข Atomic ป้องกัน Race Condition
-        // -----------------------------------------------------
-
+        // ระบบรันหมายเลข Atomic ป้องกัน Race Condition + ข้ามเลขมงคล
         function isSkippedNumber(num) {
             if (num < 10) return true; // 1-9
             const strNum = String(num);
@@ -508,7 +553,6 @@
             const trackerRef = doc(window.db, 'system_meta', 'book_tracker');
             const trackerSnap = await getDoc(trackerRef);
             
-            // ถ้าไฟล์ Tracking ยังไม่มี (รันครั้งแรก) ให้รวบรวมจากออเดอร์เก่าที่มีอยู่แล้ว
             if (!trackerSnap.exists()) {
                 const preordersRef = collection(window.db, window.colPath);
                 const querySnapshot = await getDocs(preordersRef);
@@ -527,7 +571,7 @@
         window.atomicBookAndSave = async function(quantity, orderData) {
             const trackerRef = await initializeTrackerIfNeeded();
 
-            // ใช้ Firestore Transaction เพื่อล็อคการชนกัน (รันทีละคิว)
+            // ล็อคคิวแบบ Atomic Guarantee ด้วย runTransaction (กันจองชน)
             return await runTransaction(window.db, async (transaction) => {
                 const trackerDoc = await transaction.get(trackerRef);
                 let usedNumbers = trackerDoc.exists() ? trackerDoc.data().usedNumbers || [] : [];
@@ -543,13 +587,11 @@
                 }
 
                 if (allocated.length < quantity) {
-                    throw new Error("หมายเลขหนังสือในระบบไม่เพียงพอ (จำนวนจำกัด 1,000 เล่ม)");
+                    throw new Error("หมายเลขชุดหนังสือในระบบไม่เพียงพอ (จำกัด 1,000 ชุด)");
                 }
 
-                // 1. อัปเดตสมุด Tracker (บันทึกว่าเลขนี้ถูกใช้แล้ว)
                 transaction.set(trackerRef, { usedNumbers: [...usedNumbers, ...allocated] }, { merge: true });
 
-                // 2. สร้างออเดอร์ของลูกค้า
                 const newOrderRef = doc(collection(window.db, window.colPath));
                 orderData.bookNumbers = allocated;
                 transaction.set(newOrderRef, orderData);
@@ -558,8 +600,7 @@
             });
         };
 
-        // -----------------------------------------------------
-
+        // ประมวลผลการจอง
         window.processPreOrder = async function(event) {
             event.preventDefault();
             
@@ -579,17 +620,27 @@
                 return;
             }
 
+            let address = document.getElementById('address').value;
+            const shippingType = document.getElementById('shipping').value;
+
+            // ตรวจสอบความถูกต้องที่อยู่หากเป็นแบบจัดส่งพัสดุ
+            if (shippingType === 'parcel' && !address.trim()) {
+                window.showAlert("กรุณาระบุที่อยู่สำหรับจัดส่งพัสดุให้ครบถ้วน", "ข้อมูลที่อยู่ไม่ครบ");
+                return;
+            }
+            if (shippingType === 'pickup') {
+                address = "- (รับด้วยตนเอง)";
+            }
+
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⌛</span> กำลังประมวลผล...';
+            submitBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⌛</span> กำลังประมวลผลการจอง...';
 
             try {
                 const fullname = document.getElementById('fullname').value;
                 const phone = document.getElementById('phone').value;
                 const quantity = rawQty;
-                const address = document.getElementById('address').value;
-                const shippingType = document.getElementById('shipping').value;
                 
                 let shippingFee = 0;
                 if (shippingType === 'parcel') {
@@ -609,26 +660,26 @@
                     orderDate: serverTimestamp(),
                     userId: currentUser.uid,
                     slipImage: uploadedSlipBase64
-                    // bookNumbers จะถูกใส่ใน atomicBookAndSave
                 };
 
                 const result = await window.atomicBookAndSave(quantity, orderData);
                 
-                // แจ้งเตือนแบบซ่อนเลขจากลูกค้า
+                // แจ้งเตือนลูกค้าสำเร็จ (ซ่อนหมายเลขจองไว้)
                 document.getElementById('successMessage').innerHTML = `
                     ขอบคุณคุณ <b>${fullname}</b> รับคิวการจองสำเร็จ!<br>
-                    รหัสอ้างอิง: ${result.id.substring(0, 8)}
+                    รหัสอ้างอิงของท่านคือ: <b>${result.id.substring(0, 8).toUpperCase()}</b>
                 `;
                 document.getElementById('successModal').style.display = 'flex';
                 
+                // Reset form
                 document.getElementById('preorderForm').reset();
                 uploadedSlipBase64 = null;
                 document.getElementById('slipPreviewName').innerText = "";
                 document.getElementById('quantity').value = 1;
-                window.calculateTotal();
+                window.calculateTotal(); // คำนวณใหม่โดยไม่โชว์ป๊อปอัป
 
             } catch (error) {
-                console.error("Error adding document: ", error);
+                console.error("Error processing order: ", error);
                 window.showAlert(`เกิดข้อผิดพลาด: ${error.message}`, "ล้มเหลว");
             } finally {
                 submitBtn.disabled = false;
@@ -636,6 +687,7 @@
             }
         };
 
+        // ระบบแอดมินและการตรวจสอบสิทธิ์
         window.checkAdminLogin = function(event) {
             event.preventDefault();
             const pass = document.getElementById('adminPassword').value;
@@ -721,7 +773,7 @@
                                 <div class="text-xs text-blue-600 mt-1">${order.shippingType || '-'}</div>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <div class="text-sm font-medium text-gray-900">${order.orderQuantity} เล่ม</div>
+                                <div class="text-sm font-medium text-gray-900">${order.orderQuantity} ชุด</div>
                                 <div class="text-xs text-gray-500 mt-1 break-words max-w-[150px]">No: ${numbersStr}</div>
                             </td>
                             <td class="px-4 py-3 text-right text-sm font-bold text-green-600">฿${(order.totalAmount || 0).toLocaleString()}</td>
@@ -729,7 +781,7 @@
                             <td class="px-4 py-3 text-center">${statusHtml}</td>
                             <td class="px-4 py-3 text-center">
                                 <button onclick="window.confirmStatusUpdate('${order.id}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded shadow-sm mr-1 text-xs font-bold" title="อนุมัติ">✓</button>
-                                <button onclick="window.confirmStatusUpdate('${order.id}', 'rejected')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow-sm text-xs font-bold" title="ยกเลิก/ลบออเดอร์">X</button>
+                                <button onclick="window.confirmStatusUpdate('${order.id}', 'rejected')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow-sm text-xs font-bold" title="ลบทิ้งและคืนหมายเลข">X</button>
                             </td>
                         </tr>
                     `;
@@ -742,7 +794,7 @@
         };
 
         window.confirmStatusUpdate = function(id, status) {
-            const actionText = status === 'rejected' ? 'ลบข้อมูลทิ้งอย่างสมบูรณ์ (คืนเลขกลับเข้าระบบ)' : 'ยืนยันและอนุมัติออเดอร์นี้';
+            const actionText = status === 'rejected' ? 'ลบข้อมูลออเดอร์นี้ทิ้ง (คืนเลขกลับเข้าระบบ)' : 'ยืนยันการรับเงินและอนุมัติออเดอร์นี้';
             document.getElementById('confirmActionText').innerText = `คุณแน่ใจหรือไม่ที่จะ "${actionText}" ?`;
             window.pendingAdminAction = { id, status };
             document.getElementById('confirmActionModal').style.display = 'flex';
@@ -757,7 +809,7 @@
             const rowRef = doc(window.db, window.colPath, id);
             try {
                 if (status === 'rejected') {
-                    // หากยกเลิก ให้ดึงเลขคืนจากระบบ Tracker ด้วย Transaction
+                    // ลบทิ้งสมบูรณ์ + คืนเลขแบบ Transaction
                     const trackerRef = doc(window.db, 'system_meta', 'book_tracker');
                     const rowSnap = await getDoc(rowRef);
                     
@@ -769,15 +821,13 @@
                             const trackerDoc = await transaction.get(trackerRef);
                             if (trackerDoc.exists()) {
                                 let usedNumbers = trackerDoc.data().usedNumbers || [];
-                                // เอาเลขชุดนี้ออกจากรายการที่ใช้แล้ว
                                 usedNumbers = usedNumbers.filter(n => !numbersToFree.includes(n));
                                 transaction.update(trackerRef, { usedNumbers: usedNumbers });
                             }
-                            // ลบข้อมูลออเดอร์
                             transaction.delete(rowRef);
                         });
                     } else {
-                        await deleteDoc(rowRef); // Fallback
+                        await deleteDoc(rowRef); 
                     }
                     window.showAlert("ลบรายการและคืนหมายเลขเข้าสู่ระบบเรียบร้อยแล้ว", "ยกเลิกสำเร็จ");
                 } else {
@@ -802,7 +852,7 @@
             }
             
             let csvContent = "\uFEFF"; 
-            csvContent += "วันที่จอง,ชื่อลูกค้า,เบอร์โทร,จำนวน(ชุด),หมายเลข,ยอดโอน(บาท),การจัดส่ง,ค่าส่ง,สถานะ\n";
+            csvContent += "วันที่จอง,ชื่อลูกค้า,เบอร์โทร,จำนวน(ชุด),หมายเลข,ยอดโอน(บาท),การจัดส่ง,ที่อยู่,ค่าส่ง,สถานะ\n";
             
             window.adminDataExport.forEach(row => {
                 let dateStr = "";
@@ -816,10 +866,11 @@
                 const numbers = `"${(row.bookNumbers ? row.bookNumbers.join(', ') : '')}"`;
                 const amount = row.totalAmount || 0;
                 const shipping = row.shippingType || '-';
+                const address = `"${(row.shippingAddress || '').replace(/"/g, '""')}"`;
                 const shippingFee = row.shippingFee || 0;
                 let status = row.status === 'pending_verification' ? 'รอตรวจสอบ' : (row.status === 'approved' ? 'อนุมัติแล้ว' : row.status);
                 
-                csvContent += `${dateStr},${name},${phone},${qty},${numbers},${amount},${shipping},${shippingFee},${status}\n`;
+                csvContent += `${dateStr},${name},${phone},${qty},${numbers},${amount},${shipping},${address},${shippingFee},${status}\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -876,12 +927,22 @@
             }
         };
 
+        // ผูก Event Listener เพื่อเด้ง Popup ทันทีที่เปลี่ยนจำนวนหรือการจัดส่ง
         setTimeout(() => {
             if (typeof window.calculateTotal === 'function') {
-                document.getElementById('quantity').value = 1;
-                window.calculateTotal();
+                const quantityInput = document.getElementById('quantity');
+                const shippingSelect = document.getElementById('shipping');
+                
+                // ให้เด้ง Popup เฉพาะตอนที่ผู้ใช้พิมพ์เสร็จแล้วกดออก (blur) หรือเปลี่ยนตัวเลือก Dropdown (change)
+                quantityInput.addEventListener('blur', () => window.calculateTotal(true));
+                shippingSelect.addEventListener('change', () => window.calculateTotal(true));
+                
+                // คำนวณครั้งแรกแบบเงียบๆ เพื่อตั้งค่าที่อยู่
+                quantityInput.value = 1;
+                window.calculateTotal(false);
             }
         }, 500);
+
     </script>
 </body>
 </html>
